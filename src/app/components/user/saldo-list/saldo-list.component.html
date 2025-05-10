@@ -1,0 +1,106 @@
+<!-- saldo-list.component.html -->
+
+<div class="p-8 space-y-6">
+    <!-- Form untuk menambah saldo -->
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-2xl font-semibold mb-4">Tambah Saldo</h2>
+        <form [formGroup]="addSaldoForm" (ngSubmit)="onAddSaldo()" class="space-y-4">
+            <div class="flex flex-col">
+                <label for="saldoName" class="text-sm font-medium">Nama Saldo</label>
+                <input id="saldoName" formControlName="saldoName"
+                    class="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" type="text"
+                    placeholder="Nama Saldo" required />
+            </div>
+            <div class="flex flex-col">
+                <label for="saldoAmount" class="text-sm font-medium">Jumlah Saldo</label>
+                <input id="saldoAmount" formControlName="saldoAmount"
+                    class="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" type="number"
+                    placeholder="Jumlah Saldo" required />
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+                [disabled]="addSaldoForm.invalid">Tambah Saldo</button>
+        </form>
+    </div>
+
+    <!-- Daftar Saldo -->
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Daftar Saldo</h2>
+        <div *ngIf="saldoList.length > 0">
+            <div *ngFor="let saldo of saldoList" class="flex justify-between items-center border-b py-4">
+                <div>
+                    <p class="font-semibold text-lg">{{ saldo.saldoName }}</p>
+                    <p class="text-sm text-gray-600">Saldo: Rp {{ saldo.saldoAmount | number }}</p>
+                    <p class="text-sm text-gray-600">Status: <span
+                            [class.text-green-500]="saldo.saldoStatus === 'Aktif'"
+                            [class.text-red-500]="saldo.saldoStatus === 'Nonaktif'">{{ saldo.saldoStatus }}</span></p>
+                </div>
+                <div class="flex space-x-4">
+                    <button class="bg-green-500 text-white py-1 px-4 rounded-md hover:bg-green-600 transition"
+                        (click)="onActivate(saldo)">Aktifkan</button>
+                    <button class="bg-red-500 text-white py-1 px-4 rounded-md hover:bg-red-600 transition"
+                        (click)="onDeactivate(saldo)">Nonaktifkan</button>
+                    <button class="bg-blue-500 text-white py-1 px-4 rounded-md hover:bg-blue-600 transition"
+                        (click)="onViewTransactions(saldo.id)">Lihat Transaksi</button>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="saldoList.length === 0" class="text-center text-gray-500">
+            Tidak ada saldo yang tersedia.
+        </div>
+    </div>
+
+    <!-- Daftar Transaksi untuk saldo yang dipilih -->
+    <div *ngIf="selectedSaldoId !== null" class="bg-white shadow-md rounded-lg p-6">
+        <h3 class="font-semibold text-lg mb-4">Daftar Transaksi</h3>
+
+        <form [formGroup]="addTransactionForm" (ngSubmit)="onAddTransaction()" class="space-y-4 mb-6">
+            <div class="flex flex-col">
+                <label for="transactionType" class="text-sm font-medium">Jenis Transaksi</label>
+                <input id="transactionType" formControlName="transactionType"
+                    class="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" type="text"
+                    placeholder="Jenis Transaksi" required />
+            </div>
+            <div class="flex flex-col">
+                <label for="transactionAmount" class="text-sm font-medium">Nominal Transaksi</label>
+                <input id="transactionAmount" formControlName="transactionAmount"
+                    class="border p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" type="number"
+                    placeholder="Nominal Transaksi" required />
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+                [disabled]="addTransactionForm.invalid">Tambah Transaksi</button>
+        </form>
+
+        <!-- Table untuk menampilkan transaksi -->
+        <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-100 text-left">
+                        <th class="px-4 py-2">Jenis Transaksi</th>
+                        <th class="px-4 py-2">Nominal</th>
+                        <th class="px-4 py-2">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let transaction of transactions" class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2">{{ transaction.transactionType }}</td>
+                        <td class="px-4 py-2">Rp {{ transaction.transactionAmount | number }}</td>
+                        <td class="px-4 py-2">
+                            <button
+                                class="bg-yellow-500 text-white py-1 px-2 rounded-md hover:bg-yellow-600 transition">Edit</button>
+                            <button
+                                class="bg-red-500 text-white py-1 px-2 rounded-md hover:bg-red-600 transition">Hapus</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Export Transaksi -->
+        <div class="mt-6 flex justify-end space-x-4">
+            <button class="bg-green-500 text-white py-2 px-6 rounded-md hover:bg-green-600 transition">Export to
+                PDF</button>
+            <button class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition">Export to
+                Excel</button>
+        </div>
+    </div>
+</div>

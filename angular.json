@@ -22,7 +22,7 @@
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:application",
-          "options": {
+          "options": {            
             "outputPath": "dist/mini-project",
             "index": "src/index.html",
             "browser": "src/main.ts",
@@ -72,7 +72,8 @@
               "buildTarget": "mini-project:build:production"
             },
             "development": {
-              "buildTarget": "mini-project:build:development"
+              "buildTarget": "mini-project:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
