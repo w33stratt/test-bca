@@ -1,20 +1,25 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder, Validators } from '@angular/forms';
 import { SaldoService } from './service/saldo.service';
 import { SaldoDTO } from './dtos/saldo.dto';
+import { Subject, Subscription, catchError, of, switchMap, take, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-saldo-list',
   templateUrl: './saldo-list.component.html',
   styleUrl: './saldo-list.component.css'
 })
-export class SaldoListComponent implements OnInit {
+export class SaldoListComponent implements OnInit, OnDestroy {
+  private readonly unsubscribe$ = new Subject();
+  _onDestroy$: Subject<Boolean> = new Subject<Boolean>();
+
   saldoList: SaldoDTO[] = [];
   transactions: any[] = [];
   selectedSaldoId: any;
   addSaldoForm: any;
   addTransactionForm: any;
+  loading = false;
 
   constructor(private fb: FormBuilder, private saldoService: SaldoService) {
     // Form untuk menambah saldo baru
@@ -34,89 +39,109 @@ export class SaldoListComponent implements OnInit {
     this.getSaldoList();
   }
 
-  // Mengambil daftar saldo
+  // Mengambil daftar saldo 
   getSaldoList(): void {
-    this.saldoService.getSaldo().subscribe({
-      next: (response) => {
-        this.saldoList = response;
-      },
-      error: (error) => {
+    this.loading = true;
+    this.saldoService.getSaldo().pipe(
+      catchError(error => {
         alert('Gagal mengambil data saldo: ' + error);
-      },
-    });
+        return of([]);
+      }),
+      takeUntil(this.unsubscribe$)
+    )
+      .subscribe(response => {
+        this.saldoList = response;
+        this.loading = false;
+      });
   }
 
-  // Mengambil transaksi berdasarkan saldo
+  // Mengambil transaksi berdasarkan saldo ID 
   onViewTransactions(saldoId: any): void {
     this.selectedSaldoId = saldoId;
-    this.saldoService.getTransactions(saldoId).subscribe({
-      next: (transactions) => {
-        this.transactions = transactions;
-      },
-      error: (error) => {
+    this.loading = true;
+    this.saldoService.getTransactions(saldoId).pipe(
+      catchError(error => {
         alert('Gagal mengambil transaksi: ' + error);
-      },
-    });
+        return of([]);
+      }),
+      takeUntil(this.unsubscribe$)
+    )
+      .subscribe(transactions => {
+        this.transactions = transactions;
+        this.loading = false;
+      });
   }
 
-  // Menambahkan saldo baru
+  // Menambahkan saldo baru 
   onAddSaldo(): void {
     if (this.addSaldoForm.valid) {
       const newSaldo = this.addSaldoForm.value;
-      this.saldoService.addSaldo(newSaldo).subscribe({
-        next: (response) => {
-          alert('Saldo berhasil ditambahkan!');
-          this.getSaldoList();  // Refresh daftar saldo
-          this.addSaldoForm.reset();
-        },
-        error: (error) => {
+      this.saldoService.addSaldo(newSaldo).pipe(
+        switchMap(() => this.saldoService.getSaldo()),
+        catchError(error => {
           alert('Gagal menambahkan saldo: ' + error);
-        },
-      });
+          return of([]);
+        }),
+        takeUntil(this.unsubscribe$)
+      )
+        .subscribe(response => {
+          this.saldoList = response;
+          alert('Saldo berhasil ditambahkan!');
+          this.addSaldoForm.reset();
+        });
     }
   }
 
-  // Menambahkan transaksi baru
+  // Menambahkan transaksi baru 
   onAddTransaction(): void {
     if (this.addTransactionForm.valid && this.selectedSaldoId !== null) {
       const newTransaction = { ...this.addTransactionForm.value, saldoId: this.selectedSaldoId };
-      this.saldoService.addTransaction(newTransaction).subscribe({
-        next: (response) => {
-          alert('Transaksi berhasil ditambahkan!');
-          this.onViewTransactions(this.selectedSaldoId);  // Refresh transaksi
-          this.addTransactionForm.reset();
-        },
-        error: (error) => {
+      this.saldoService.addTransaction(newTransaction).pipe(
+        switchMap(() => this.saldoService.getTransactions(this.selectedSaldoId)), // Refresh transaksi setelah berhasil menambah transaksi
+        catchError(error => {
           alert('Gagal menambahkan transaksi: ' + error);
-        },
-      });
+          return of([]);
+        }),
+        takeUntil(this.unsubscribe$)
+      )
+        .subscribe(transactions => {
+          this.transactions = transactions;
+          alert('Transaksi berhasil ditambahkan!');
+          this.addTransactionForm.reset();
+        });
     }
   }
 
-  // Mengaktifkan saldo
+  // Mengaktifkan saldo 
   onActivate(saldo: any): void {
-    this.saldoService.activateSaldo(saldo.id).subscribe({
-      next: (response) => {
-        alert('Saldo berhasil diaktifkan!');
-        this.getSaldoList();  // Refresh daftar saldo
-      },
-      error: (error) => {
+    this.saldoService.activateSaldo(saldo.id).pipe(
+      switchMap(() => this.saldoService.getSaldo()),
+      catchError(error => {
         alert('Gagal mengaktifkan saldo: ' + error);
-      },
-    });
+        return of([]);
+      }),
+      takeUntil(this.unsubscribe$)
+    )
+      .subscribe(response => {
+        this.saldoList = response;
+        alert('Saldo berhasil diaktifkan!');
+      });
   }
 
-  // Menonaktifkan saldo
+  // Menonaktifkan saldo 
   onDeactivate(saldo: any): void {
-    this.saldoService.deactivateSaldo(saldo.id).subscribe({
-      next: (response) => {
-        alert('Saldo berhasil dinonaktifkan!');
-        this.getSaldoList();  // Refresh daftar saldo
-      },
-      error: (error) => {
+    this.saldoService.deactivateSaldo(saldo.id).pipe(
+      switchMap(() => this.saldoService.getSaldo()), // Refresh daftar saldo setelah menonaktifkan saldo
+      catchError(error => {
         alert('Gagal menonaktifkan saldo: ' + error);
-      },
-    });
+        return of([]);
+      }),
+      takeUntil(this.unsubscribe$)
+    )
+      .subscribe(response => {
+        this.saldoList = response;
+        alert('Saldo berhasil dinonaktifkan!');
+      });
   }
 
   // Export transaksi ke PDF
@@ -135,4 +160,7 @@ export class SaldoListComponent implements OnInit {
   //   const wb: XLSX.WorkBook = { Sheets: { 'Transaksi': ws }, SheetNames: ['Transaksi'] };
   //   XLSX.writeFile(wb, 'transaksi-list.xlsx');
   // }
+  ngOnDestroy(): void {
+    this.unsubscribe$.unsubscribe();
+  }
 }
