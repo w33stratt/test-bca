@@ -3,6 +3,7 @@ import { environment } from "../../../../environment/environment.development";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { Observable, catchError, of } from "rxjs";
 import { SaldoDTO } from "../dtos/saldo.dto";
+import { TransactionDTO } from "../dtos/transactions.dto";
 
 @Injectable({
     providedIn: 'root',
@@ -54,7 +55,7 @@ export class SaldoService {
     }
 
     // Menambahkan transaksi baru
-    addTransaction(transaction: { transactionType: string; transactionAmount: number; saldoId: number }): Observable<any> {
+    addTransaction(transaction: { transactionType: string; transactionAmount: number; idSaldo: number }): Observable<any> {
         return this.http.post<any>(`${this.baseUrlTransaksi}/New`, transaction).pipe(
             catchError((error) => {
                 console.error('Error adding transaction:', error);
@@ -64,8 +65,10 @@ export class SaldoService {
     }
 
     // Mendapatkan transaksi berdasarkan saldo
-    getTransactions(saldoId: number): Observable<any[]> {
-        return this.http.get<any[]>(`${this.baseUrlTransaksi}/Transaksi?saldoId=${saldoId}`).pipe(
+    getTransactions(saldoId: number): Observable<TransactionDTO[]> {
+        const body = { idSaldo: saldoId };
+
+        return this.http.post<any[]>(`${this.baseUrlTransaksi}`, body).pipe(
             catchError((error) => {
                 console.error('Error fetching transactions:', error);
                 return of([]);
@@ -73,9 +76,16 @@ export class SaldoService {
         );
     }
 
-    // Mengedit transaksi
-    editTransaction(transactionId: number, updatedTransaction: { transactionType: string; transactionAmount: number }): Observable<any> {
-        return this.http.put<any>(`${this.baseUrlTransaksi}/Transaksi/Edit/${transactionId}`, updatedTransaction).pipe(
+    // Mengedit transaksi (menggunakan POST)
+    editTransaction(transactionId: number, updatedTransaction: { transactionType: string; transactionAmount: number; transactionUpdateDate: string }): Observable<TransactionDTO | null> {
+        const body = {
+            id: transactionId,
+            transactionType: updatedTransaction.transactionType,
+            transactionAmount: updatedTransaction.transactionAmount,
+            transactionUpdateDate: updatedTransaction.transactionUpdateDate,
+        };
+
+        return this.http.post<TransactionDTO>(`${this.baseUrlTransaksi}/Edit`, body).pipe(
             catchError((error) => {
                 console.error('Error editing transaction:', error);
                 return of(null);
@@ -85,10 +95,12 @@ export class SaldoService {
 
     // Menghapus transaksi
     deleteTransaction(transactionId: number): Observable<any> {
-        return this.http.delete<any>(`${this.baseUrlTransaksi}/Transaksi/Delete/${transactionId}`).pipe(
+        const body = { id: transactionId }; // Body yang sesuai dengan format delete
+
+        return this.http.post<any>(`${this.baseUrlTransaksi}/Delete`, body).pipe(
             catchError((error) => {
                 console.error('Error deleting transaction:', error);
-                return of(null);
+                return of(null);  // Mengembalikan null jika gagal
             })
         );
     }

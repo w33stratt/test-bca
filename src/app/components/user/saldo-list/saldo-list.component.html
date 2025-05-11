@@ -53,6 +53,14 @@
     <div *ngIf="selectedSaldoId !== null" class="bg-white shadow-md rounded-lg p-6">
         <h3 class="font-semibold text-lg mb-4">Daftar Transaksi</h3>
 
+        <!-- Tombol Ekspor PDF dan Excel -->
+        <div class="flex justify-end space-x-4 mb-6">
+            <button class="bg-green-500 text-white py-2 px-6 rounded-md hover:bg-green-600 transition"
+                (click)="exportToPDF()">Export to PDF</button>
+            <button class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition"
+                (click)="exportToExcel()">Export to Excel</button>
+        </div>
+
         <form [formGroup]="addTransactionForm" (ngSubmit)="onAddTransaction()" class="space-y-4 mb-6">
             <div class="flex flex-col">
                 <label for="transactionType" class="text-sm font-medium">Jenis Transaksi</label>
@@ -77,6 +85,8 @@
                     <tr class="bg-gray-100 text-left">
                         <th class="px-4 py-2">Jenis Transaksi</th>
                         <th class="px-4 py-2">Nominal</th>
+                        <th class="px-4 py-2">Tanggal Transaksi</th>
+                        <th class="px-4 py-2">Tanggal Update Transaksi</th>
                         <th class="px-4 py-2">Aksi</th>
                     </tr>
                 </thead>
@@ -84,10 +94,12 @@
                     <tr *ngFor="let transaction of transactions" class="border-b hover:bg-gray-50">
                         <td class="px-4 py-2">{{ transaction.transactionType }}</td>
                         <td class="px-4 py-2">Rp {{ transaction.transactionAmount | number }}</td>
+                        <td class="px-4 py-2">{{ transaction.transactionInputDate | date:'short' }}</td>
+                        <td class="px-4 py-2">{{ transaction.transactionUpdateDate | date:'short' }}</td>
                         <td class="px-4 py-2">
-                            <button
+                            <button (click)="onEditTransaction(transaction)"
                                 class="bg-yellow-500 text-white py-1 px-2 rounded-md hover:bg-yellow-600 transition">Edit</button>
-                            <button
+                            <button (click)="onDeleteTransaction(transaction.id)"
                                 class="bg-red-500 text-white py-1 px-2 rounded-md hover:bg-red-600 transition">Hapus</button>
                         </td>
                     </tr>
@@ -95,12 +107,23 @@
             </table>
         </div>
 
-        <!-- Export Transaksi -->
-        <div class="mt-6 flex justify-end space-x-4">
-            <button class="bg-green-500 text-white py-2 px-6 rounded-md hover:bg-green-600 transition">Export to
-                PDF</button>
-            <button class="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition">Export to
-                Excel</button>
+        <!-- Form untuk Edit Transaksi -->
+        <div *ngIf="selectedTransaction" class="mt-6">
+            <h3 class="font-semibold mb-4">Edit Transaksi</h3>
+            <form [formGroup]="editTransactionForm" (ngSubmit)="onSubmitEditTransaction()" class="space-y-4">
+                <div class="flex flex-col">
+                    <label for="transactionType" class="text-sm font-semibold">Jenis Transaksi</label>
+                    <input id="transactionType" formControlName="transactionType" class="border p-2 rounded" type="text"
+                        placeholder="Jenis Transaksi" required />
+                </div>
+                <div class="flex flex-col">
+                    <label for="transactionAmount" class="text-sm font-semibold">Nominal Transaksi</label>
+                    <input id="transactionAmount" formControlName="transactionAmount" class="border p-2 rounded"
+                        type="number" placeholder="Nominal Transaksi" required />
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded"
+                    [disabled]="editTransactionForm.invalid">Simpan Perubahan</button>
+            </form>
         </div>
     </div>
 </div>
